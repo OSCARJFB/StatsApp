@@ -13,24 +13,16 @@
 
 enum modes 
 {
-  OPERATION,
-  MEDIAN,
-  MEAN,
-  MODE,
+
+  	OPERATION,
+  	MEAN,
+ 	MEDIAN,
+  	RANGE,
+  	MODE,
 }; 
 
 int _operation = 0; 
 int _numCount = 0; 
-
-static double mean(double *nums)
-{
-	double sum = 0; 
-	for(int i = 0; i < _numCount; ++i)
-	{
-		sum += nums[i]; 
-	}
-	return sum / (_numCount - 1);	
-}	
 
 static double *bSortList(double *nums)
 {
@@ -50,6 +42,15 @@ static double *bSortList(double *nums)
 	return nums; 
 }
 
+static double mean(double *nums)
+{
+	double sum = 0; 
+	for(int i = 0; i < _numCount; ++i)
+	{
+		sum += nums[i]; 
+	}
+	return sum / (_numCount - 1);	
+}	
 
 static double median(double *nums)
 {
@@ -80,21 +81,39 @@ static double median(double *nums)
     	return 0;	
 }	
 
+static double range(double *nums)
+{
+	bSortList(nums); 
+	
+	int min = nums[1], max = 0;
+	for(int i = 0; i < _numCount; ++i)
+	{
+		max = nums[i]; 
+	}
+	
+	return max - min; 
+}
+
 static double *filterArgv(int argc, char **argv)
 {
-	const char *avg = "-a", *mean = "-m";
+	const char *mean = "-a", *median = "-m", *range = "-r";
 	char *endptr;
 	double *nums = NULL;
 	for(int i = 0; i < argc; ++i)
 	{
-		if(strcmp(*(argv + i), avg) == 0)
+		if(strcmp(*(argv + i), mean) == 0)
 		{
 			_operation = MEAN;
 			break; 
 		}
-		else if(strcmp(*(argv + i), mean) == 0)
+		else if(strcmp(*(argv + i), median) == 0)
 		{
 			_operation = MEDIAN;
+			break;
+		}
+		else if(strcmp(*(argv + i), range) == 0)
+		{
+			_operation = RANGE;
 			break;
 		}
 		else
@@ -134,6 +153,9 @@ static void switchAndPrint(double *nums)
 			break;
 		case MEDIAN:
 			printf("Median: %f", median(nums));
+			break;
+		case RANGE:
+			printf("range: %f", range(nums));
 			break;
 	}
 }
