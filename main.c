@@ -19,6 +19,7 @@ enum modes
  	MEDIAN,
   	RANGE,
   	MODE,
+	ALL, 
 }; 
 
 int _operation = 0; 
@@ -96,7 +97,7 @@ static double range(double *nums)
 
 static double *filterArgv(int argc, char **argv)
 {
-	const char *mean = "-a", *median = "-m", *range = "-r";
+	const char *mean = "-a", *median = "-m", *range = "-r", *all = "-all";
 	char *endptr;
 	double *nums = NULL;
 	for(int i = 0; i < argc; ++i)
@@ -116,6 +117,12 @@ static double *filterArgv(int argc, char **argv)
 			_operation = RANGE;
 			break;
 		}
+		else if(strcmp(*(argv + i), all) == 0)
+		{
+			_operation = ALL;
+			break;
+		}
+
 		else
 		{
 			double result = strtod(*(argv + i), &endptr);
@@ -155,7 +162,12 @@ static void switchAndPrint(double *nums)
 			printf("Median: %f", median(nums));
 			break;
 		case RANGE:
-			printf("range: %f", range(nums));
+			printf("Range: %f", range(nums));
+			break;
+		case ALL:
+			printf("Mean: %f\n", mean(nums));		
+			printf("Median: %f\n", median(nums));
+			printf("Range: %f\n", range(nums));
 			break;
 	}
 }
