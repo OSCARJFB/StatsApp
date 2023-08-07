@@ -25,6 +25,72 @@ enum modes
 int _operation = 0; 
 int _numCount = 0; 
 
+typedef struct numCount
+{
+	double num;
+	int count; 
+	struct numCount *next; 
+} numCount; 
+
+static int getResultsFromHash(numCount *headNode, double *result)
+{
+	int maxCount = 0, modes = 0; 
+	for(numCount *node = headNode; node->next != NULL; node = node->next)
+	{
+		if(node->count > maxCount)
+		{
+			result = malloc(sizeof(double)); 
+			result[modes++] = node->num;
+			maxCount = node->count;
+		}
+	}
+
+	for(numCount *node = headNode; node->next != NULL; node = node->next)
+	{
+		if(node->count == maxCount)
+		{
+			result = realloc(result, sizeof(double) * (modes + 1)); 
+			result[modes++] = node->num;
+		}
+	}
+
+	return modes;
+}
+
+static void setHash(double num, numCount **headNode)
+{
+
+	numCount *newNode = malloc(sizeof(numCount));  
+	newNode->num = num; 
+	newNode->next = NULL; 
+		
+	if(newNode == NULL)
+	{
+		perror("Malloc failed!");
+		exit(1); 
+	}
+
+	if(*headNode == NULL)
+	{
+		newNode->count += 1;
+		*headNode = newNode; 
+	       	return; 	
+	}
+
+	numCount *node = *headNode; 
+	while(node->next != NULL)
+	{
+		if(node->num == num)
+		{
+			node->count += 1; 
+			return; 
+		}
+		node = node->next;
+	}
+
+	node->next = newNode;  
+}
+
 static double *bSortList(double *nums)
 {
 	for(int i = 0; i < _numCount; ++i)
@@ -50,7 +116,7 @@ static double mean(double *nums)
 	{
 		sum += nums[i]; 
 	}
-	return sum / (_numCount - 1);	
+	return sum / (_numCount - 1); 	
 }	
 
 static double median(double *nums)
@@ -85,8 +151,7 @@ static double median(double *nums)
 static double range(double *nums)
 {
 	bSortList(nums); 
-	
-	int min = nums[1], max = 0;
+	int min = nums[0], max = 0;
 	for(int i = 0; i < _numCount; ++i)
 	{
 		max = nums[i]; 
@@ -95,9 +160,26 @@ static double range(double *nums)
 	return max - min; 
 }
 
+static double *mode(double *nums)
+{
+	numCount *headNode = NULL;  
+	bSortList(nums);
+	for(int i = 1; i < _numCount; ++i)
+	{	
+		setHash(nums[i], &headNode);
+	}	
+	
+	double *result = NULL;
+	int modes = getResultsFromHash(headNode, result);
+
+	// TODO iterate *result while i < modes
+	// print result
+	// free linked list, free result
+}
+
 static double *filterArgv(int argc, char **argv)
 {
-	const char *mean = "-a", *median = "-m", *range = "-r", *all = "-all";
+	const char *mean = "-a", *median = "-m", *range = "-r", *mode = "-o", *all = "-all";
 	char *endptr;
 	double *nums = NULL;
 	for(int i = 0; i < argc; ++i)
@@ -115,6 +197,11 @@ static double *filterArgv(int argc, char **argv)
 		else if(strcmp(*(argv + i), range) == 0)
 		{
 			_operation = RANGE;
+			break;
+		}
+		else if(strcmp(*(argv + i), mode) == 0)
+		{
+			_operation = MODE;
 			break;
 		}
 		else if(strcmp(*(argv + i), all) == 0)
@@ -164,10 +251,15 @@ static void switchAndPrint(double *nums)
 		case RANGE:
 			printf("Range: %f", range(nums));
 			break;
+		case MODE:
+			//printf("Mode: %f", mode(nums));
+			break;
 		case ALL:
 			printf("Mean: %f\n", mean(nums));		
 			printf("Median: %f\n", median(nums));
 			printf("Range: %f\n", range(nums));
+			//printf("Mode: %f\n", mode(nums));
+			break;
 			break;
 	}
 }
