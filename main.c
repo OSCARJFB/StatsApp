@@ -32,15 +32,14 @@ typedef struct numCount
 	struct numCount *next; 
 } numCount; 
 
-static int getResultsFromHash(numCount *headNode, double *result)
+static int getResultsFromHash(numCount *headNode, double **results)
 {
-	int maxCount = 0, modes = 0; 
+	double *result = NULL; 
+	int maxCount = 0, modes = 0;	
 	for(numCount *node = headNode; node->next != NULL; node = node->next)
 	{
 		if(node->count > maxCount)
-		{
-			result = malloc(sizeof(double)); 
-			result[modes++] = node->num;
+	{
 			maxCount = node->count;
 		}
 	}
@@ -50,48 +49,79 @@ static int getResultsFromHash(numCount *headNode, double *result)
 		if(node->count == maxCount)
 		{
 			result = realloc(result, sizeof(double) * (modes + 1)); 
+			if(result == NULL)
+			{
+				perror("Realloc failed");
+				exit(1); 
+			}
+
 			result[modes++] = node->num;
 		}
 	}
 
+	*results = result;
 	return modes;
 }
 
 static void setHash(double num, numCount **headNode)
 {
-
-	numCount *newNode = malloc(sizeof(numCount));  
-	newNode->num = num; 
-	newNode->next = NULL; 
-		
-	if(newNode == NULL)
-	{
-		perror("Malloc failed!");
-		exit(1); 
-	}
-
 	if(*headNode == NULL)
 	{
-		newNode->count += 1;
+		numCount *newNode = malloc(sizeof(numCount));  
+		if(newNode == NULL)
+		{
+			perror("Malloc failed!");
+			exit(1); 
+		}
+		newNode->num = num; 
+		newNode->next = NULL; 	
+		newNode->count += 1; 
 		*headNode = newNode; 
 	       	return; 	
 	}
 
 	numCount *node = *headNode; 
-	while(node->next != NULL)
+	while(node != NULL)
 	{
 		if(node->num == num)
 		{
 			node->count += 1; 
 			return; 
 		}
+
+		if(node->next == NULL)
+		{
+			break; 
+		}
 		node = node->next;
 	}
 
+
+	numCount *newNode = malloc(sizeof(numCount)); 
+	if(newNode == NULL)
+	{
+		perror("Malloc failed!");
+		exit(1); 
+	}
+	newNode->num = num; 
+	newNode->next = NULL; 	
+	newNode->count += 1; 
 	node->next = newNode;  
 }
 
-static double *bSortList(double *nums)
+
+static void deleteHash(numCount **headNode)
+{
+	while(*headNode != NULL)
+	{
+		numCount *temp = *headNode; 
+		*headNode = (*headNode)->next; 
+		free(temp); 
+		temp = NULL; 
+	}
+}
+
+static void bSortList(double *nums)
 {
 	for(int i = 0; i < _numCount; ++i)
 	{
@@ -105,17 +135,17 @@ static double *bSortList(double *nums)
 			}
 		}
 	}
-
-	return nums; 
 }
 
-static double mean(double *nums)
+static double mean(double *s)
 {
 	double sum = 0; 
 	for(int i = 0; i < _numCount; ++i)
 	{
-		sum += nums[i]; 
+		sum += s[i]; 
 	}
+
+	printf("Mean %f\n", sum / (_numCount - 1));
 	return sum / (_numCount - 1); 	
 }	
 
@@ -130,6 +160,7 @@ static double median(double *nums)
 		{
 			if(i > (float)(_numCount / 2))
 			{
+				printf("Median: %f\n", (nums[i - 1] + nums[i]) / 2);
 				return (nums[i - 1] + nums[i]) / 2; 
 			}
 		}
@@ -140,23 +171,26 @@ static double median(double *nums)
 		{
 			if(i + 1 >  (float)(_numCount / 2))
 			{
+				printf("Median: %f\n", nums[i]);
 				return nums[i]; 
 			}
 		}
 	}
 
+	printf("Median: %f\n", 0.f);
     	return 0;	
 }	
 
 static double range(double *nums)
 {
 	bSortList(nums); 
-	int min = nums[0], max = 0;
+	double min = nums[0], max = 0;
 	for(int i = 0; i < _numCount; ++i)
 	{
 		max = nums[i]; 
 	}
 	
+	printf("Range: %f\n", max - min);
 	return max - min; 
 }
 
@@ -164,17 +198,28 @@ static double *mode(double *nums)
 {
 	numCount *headNode = NULL;  
 	bSortList(nums);
-	for(int i = 1; i < _numCount; ++i)
+	for(int i = 1; i <= _numCount; ++i)
 	{	
 		setHash(nums[i], &headNode);
-	}	
-	
-	double *result = NULL;
-	int modes = getResultsFromHash(headNode, result);
+	}
 
-	// TODO iterate *result while i < modes
-	// print result
-	// free linked list, free result
+	double *result = NULL;
+	int modes = getResultsFromHash(headNode, &result);
+	if(result == NULL)
+	{	
+		return 0; 
+	}	
+
+	printf("Modes: "); 
+	for(int i = 0; i < modes; ++i)
+	{
+		printf("%f ", result[i]); 
+	}
+	puts("");
+
+	free(result); 	
+	result = NULL; 
+	deleteHash(&headNode);
 }
 
 static double *filterArgv(int argc, char **argv)
@@ -238,28 +283,27 @@ static double *filterArgv(int argc, char **argv)
 	return nums;
 }
 
-static void switchAndPrint(double *nums)
+static void switchAndPrint(double *s)
 {
 	switch(_operation)
 	{
 		case MEAN:	
-			printf("Mean(average): %f", mean(nums)); 
+			(void)mean(s);
 			break;
 		case MEDIAN:
-			printf("Median: %f", median(nums));
+			(void)median(s);
 			break;
 		case RANGE:
-			printf("Range: %f", range(nums));
+			(void)range(s);
 			break;
 		case MODE:
-			//printf("Mode: %f", mode(nums));
+			(void)mode(s);
 			break;
 		case ALL:
-			printf("Mean: %f\n", mean(nums));		
-			printf("Median: %f\n", median(nums));
-			printf("Range: %f\n", range(nums));
-			//printf("Mode: %f\n", mode(nums));
-			break;
+			(void)mean(s);
+			(void)median(s);
+			(void)range(s);
+			(void)mode(s);
 			break;
 	}
 }
