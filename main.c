@@ -32,6 +32,17 @@ typedef struct numCount
 	struct numCount *next; 
 } numCount; 
 
+void *allocateMem(void *memory)
+{
+	if(memory == NULL) 
+	{
+		perror("Critical error memory allocation failed. Exit with return code 1");
+	        exit(1);	
+	}
+
+	return memory;
+}
+
 static int getResultsFromHash(numCount *headNode, double **results)
 {
 	double *result = NULL; 
@@ -48,13 +59,7 @@ static int getResultsFromHash(numCount *headNode, double **results)
 	{
 		if(node->count == maxCount)
 		{
-			result = realloc(result, sizeof(double) * (modes + 1)); 
-			if(result == NULL)
-			{
-				perror("Realloc failed");
-				exit(1); 
-			}
-
+			result = allocateMem(realloc(result, sizeof(double) * (modes + 1))); 
 			result[modes++] = node->num;
 		}
 	}
@@ -67,12 +72,7 @@ static void setHash(double num, numCount **headNode)
 {
 	if(*headNode == NULL)
 	{
-		numCount *newNode = malloc(sizeof(numCount));  
-		if(newNode == NULL)
-		{
-			perror("Malloc failed!");
-			exit(1); 
-		}
+		numCount *newNode = allocateMemory(malloc(sizeof(numCount)));  
 		newNode->num = num; 
 		newNode->next = NULL; 	
 		newNode->count += 1; 
@@ -97,12 +97,7 @@ static void setHash(double num, numCount **headNode)
 	}
 
 
-	numCount *newNode = malloc(sizeof(numCount)); 
-	if(newNode == NULL)
-	{
-		perror("Malloc failed!");
-		exit(1); 
-	}
+	numCount *newNode = allocateMem(malloc(sizeof(numCount))); 
 	newNode->num = num; 
 	newNode->next = NULL; 	
 	newNode->count += 1; 
@@ -121,6 +116,10 @@ static void deleteHash(numCount **headNode)
 	}
 }
 
+/** 
+ * A bubblesort just doing its job. 
+ * A sorted array is need for some of the statistic operations.
+ */
 static void bSortList(double *nums)
 {
 	for(int i = 0; i < _numCount; ++i)
@@ -137,6 +136,12 @@ static void bSortList(double *nums)
 	}
 }
 
+
+/**
+ * How to find the mean: 
+ * Sum all values in the data set. 
+ * Finally divide the sum with total amount values in the set. 
+ */
 static double mean(double *s)
 {
 	double sum = 0; 
@@ -149,6 +154,12 @@ static double mean(double *s)
 	return sum / (_numCount - 1); 	
 }	
 
+/**
+ * How to find the median: 
+ * Our data set needs to be sorted.  
+ * The median in an uneven dataset is the middle value. 
+ * If the data set is even the two values in the middle summerized and the diveded by two will be the median. 
+ */
 static double median(double *nums)
 {
 	bSortList(nums); 
@@ -220,6 +231,24 @@ static double *mode(double *nums)
 	free(result); 	
 	result = NULL; 
 	deleteHash(&headNode);
+}
+
+// Calculate standard deviation
+static double stdDev(double *nums)
+{
+	// Step one: Get the mean of the data set.
+	double m = mean(nums); 
+
+	// Step two: Find out how each data point deviates from the mean.
+	// Step three: Square all of the found deviations. 
+	double *dev = NULL; 
+	for(int i = 0; i <= _numsCount; ++i)
+	{
+		dev = allocateMem(realloc(dev, sizeof(double) * i + 1));
+		dev[i] = nums[i] - m;	
+		dev[i] = dev[i] * dev[i];
+	}
+
 }
 
 static double *filterArgv(int argc, char **argv)
