@@ -72,7 +72,7 @@ static void setHash(double num, numCount **headNode)
 {
 	if(*headNode == NULL)
 	{
-		numCount *newNode = allocateMemory(malloc(sizeof(numCount)));  
+		numCount *newNode = allocateMem(malloc(sizeof(numCount)));  
 		newNode->num = num; 
 		newNode->next = NULL; 	
 		newNode->count += 1; 
@@ -242,7 +242,7 @@ static double stdDev(double *nums)
 	// Step two: Find out how each data point deviates from the mean.
 	// Step three: Square all of the found deviations. 
 	double *dev = NULL; 
-	for(int i = 0; i <= _numsCount; ++i)
+	for(int i = 0; i <= _numCount; ++i)
 	{
 		dev = allocateMem(realloc(dev, sizeof(double) * i + 1));
 		dev[i] = nums[i] - m;	
@@ -292,12 +292,7 @@ static double *filterArgv(int argc, char **argv)
 				perror("Error invalid numerical input.");
 				exit(1);
 			}
-			nums = realloc(nums, sizeof(double) * (i + 1));
-			if(nums == NULL)
-			{
-				perror("Error allocating memory.");
-				exit(1); 
-			}
+			nums = allocateMem(realloc(nums, sizeof(double) * (i + 1)));
 			nums[i] = result;
 		       	++_numCount; 	
 		}
