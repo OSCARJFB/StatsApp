@@ -75,6 +75,7 @@ static int getResultsFromHash(numCount *headNode, double **results)
 	}
 
 	*results = result;
+	modes = maxCount == 1 ? 0 : modes;
 	return modes;
 }
 
@@ -160,7 +161,7 @@ static void bSortList(double *nums)
  * Sum all values in the data set. 
  * Finally divide the sum with total amount values in the set. 
  */
-static double mean(double *s)
+static void mean(double *s)
 {
 	double sum = 0; 
 	for(int i = 0; i < _numCount; ++i)
@@ -169,7 +170,6 @@ static double mean(double *s)
 	}
 
 	printf("Mean %f\n", sum / (_numCount - 1));
-	return sum / (_numCount - 1); 	
 }	
 
 /**
@@ -178,7 +178,7 @@ static double mean(double *s)
  * The median in an uneven dataset is the middle value. 
  * If the data set is even the two values in the middle summerized and the diveded by two will be the median. 
  */
-static double median(double *nums)
+static void median(double *nums)
 {
 	bSortList(nums); 
 	
@@ -190,7 +190,7 @@ static double median(double *nums)
 			if(i > (float)(_numCount / 2))
 			{
 				printf("Median: %f\n", (nums[i - 1] + nums[i]) / 2);
-				return (nums[i - 1] + nums[i]) / 2; 
+				return;
 			}
 		}
 	}
@@ -201,20 +201,19 @@ static double median(double *nums)
 			if(i + 1 >  (float)(_numCount / 2))
 			{
 				printf("Median: %f\n", nums[i]);
-				return nums[i]; 
+				return;
 			}
 		}
 	}
 
 	printf("Median: %f\n", 0.f);
-    	return 0;	
 }	
 
 /**
  * How to find the range.
  * Subtract min from max value.
  */
-static double range(double *nums)
+static void range(double *nums)
 {
 	bSortList(nums); 
 	double min = nums[0], max = 0;
@@ -224,7 +223,6 @@ static double range(double *nums)
 	}
 	
 	printf("Range: %f\n", max - min);
-	return max - min; 
 }
 
 
@@ -235,7 +233,7 @@ static double range(double *nums)
  * To find this we sort the data set, then add each unique value to hashset and add a count to each time this value is found.
  * The values being of highest frequency gets printed. 
  */
-static double *mode(double *nums)
+static void mode(double *nums)
 {
 	numCount *headNode = NULL;  
 	bSortList(nums);
@@ -248,8 +246,14 @@ static double *mode(double *nums)
 	int modes = getResultsFromHash(headNode, &result);
 	if(result == NULL)
 	{	
-		return 0; 
+		return; 
 	}	
+
+	if(modes == 0)
+	{
+		printf("No modes\n");
+		return;
+	}
 
 	printf("Modes: "); 
 	for(int i = 0; i < modes; ++i)
@@ -273,7 +277,7 @@ static double *mode(double *nums)
  *  TODO: right now we calculate only population we shoud also enable sample using v = (s / n - 1) 
  *  To enable this we should have an arugment telling the function which type we want. 
  */
-static double stdDev(double *nums)
+static void stdDev(double *nums)
 {
 	double m = 0, *d = NULL, v = 0, std_d = 0, s = 0, ms = 0;
 	int n = 0; 
@@ -299,7 +303,6 @@ static double stdDev(double *nums)
 	d = NULL;
 
 	printf("Standard deviation: %f\n", std_d);
-	return std_d; 
 }
 
 /**
@@ -376,25 +379,26 @@ static void switchAndPrint(double *s)
 	switch(_operation)
 	{
 		case MEAN:	
-			(void)mean(s);
+			mean(s);
 			break;
 		case MEDIAN:
-			(void)median(s);
+			median(s);
 			break;
 		case RANGE:
-			(void)range(s);
+			range(s);
 			break;
 		case MODE:
-			(void)mode(s);
+			mode(s);
 			break;
 		case STD_D:
-			(void)stdDev(s); 
+			stdDev(s); 
 			break;
 		case ALL:
-			(void)mean(s);
-			(void)median(s);
-			(void)range(s);
-			(void)mode(s);
+			mean(s);
+			median(s);
+			range(s);
+			mode(s);
+			stdDev(s);
 			break;
 	}
 }
