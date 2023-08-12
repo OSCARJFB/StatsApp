@@ -9,6 +9,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 #include <errno.h>
 
 enum modes 
@@ -19,6 +20,7 @@ enum modes
  	MEDIAN,
   	RANGE,
   	MODE,
+	STD_D, 
 	ALL, 
 }; 
 
@@ -32,6 +34,10 @@ typedef struct numCount
 	struct numCount *next; 
 } numCount; 
 
+/**
+ * Assert any memory allocation using this function.
+ * We just exit if the kernel don't accept our request for memory. 
+ */
 void *allocateMem(void *memory)
 {
 	if(memory == NULL) 
@@ -43,6 +49,10 @@ void *allocateMem(void *memory)
 	return memory;
 }
 
+/**
+ * Fetch the result from the hashset. 
+ * Allocate and store the value of each mode(s).
+ */
 static int getResultsFromHash(numCount *headNode, double **results)
 {
 	double *result = NULL; 
@@ -68,6 +78,10 @@ static int getResultsFromHash(numCount *headNode, double **results)
 	return modes;
 }
 
+/**
+ * Set the hashset
+ * if a value exists in the set increment its count by one. 
+ */
 static void setHash(double num, numCount **headNode)
 {
 	if(*headNode == NULL)
@@ -105,6 +119,10 @@ static void setHash(double num, numCount **headNode)
 }
 
 
+/** 
+ * No need for the hashset.
+ * Delete/free each node in the set. 
+ */
 static void deleteHash(numCount **headNode)
 {
 	while(*headNode != NULL)
@@ -118,7 +136,7 @@ static void deleteHash(numCount **headNode)
 
 /** 
  * A bubblesort just doing its job. 
- * A sorted array is need for some of the statistic operations.
+ * Sorted arrays are need for some of the statistic operations or make them easier to calculate.
  */
 static void bSortList(double *nums)
 {
@@ -192,6 +210,10 @@ static double median(double *nums)
     	return 0;	
 }	
 
+/**
+ * How to find the range.
+ * Subtract min from max value.
+ */
 static double range(double *nums)
 {
 	bSortList(nums); 
@@ -205,6 +227,14 @@ static double range(double *nums)
 	return max - min; 
 }
 
+
+/**
+ * How to find the mode(s)
+ * Modes are the most frequent numbers in a data set.
+ * There can be several modes so long as they acount for the maximum frequency in the set.
+ * To find this we sort the data set, then add each unique value to hashset and add a count to each time this value is found.
+ * The values being of highest frequency gets printed. 
+ */
 static double *mode(double *nums)
 {
 	numCount *headNode = NULL;  
@@ -233,27 +263,52 @@ static double *mode(double *nums)
 	deleteHash(&headNode);
 }
 
-// Calculate standard deviation
+/**
+ *  Calculate the standard deviation
+ *  (m) is the mean and (d) is the deviation of each data point.
+ *  (s) the sum of squares of all deviations (v) the variance.
+ *  (n) represents the samples and (std_d) the result. 
+ *
+ *
+ *  TODO: right now we calculate only population we shoud also enable sample using v = (s / n - 1) 
+ *  To enable this we should have an arugment telling the function which type we want. 
+ */
 static double stdDev(double *nums)
 {
-	// Step one: Get the mean of the data set.
-	double m = mean(nums); 
+	double m = 0, *d = NULL, v = 0, std_d = 0, s = 0, ms = 0;
+	int n = 0; 
 
-	// Step two: Find out how each data point deviates from the mean.
-	// Step three: Square all of the found deviations. 
-	double *dev = NULL; 
-	for(int i = 0; i <= _numCount; ++i)
+	for(int i = 0; i < _numCount; ++i)
 	{
-		dev = allocateMem(realloc(dev, sizeof(double) * i + 1));
-		dev[i] = nums[i] - m;	
-		dev[i] = dev[i] * dev[i];
+		ms += nums[i]; 
 	}
 
+	m = ms / (_numCount - 1); 		// Step one: Get the mean of the data set.
+	for(int i = 1; i < _numCount; ++i)
+	{
+		d = allocateMem(realloc(d, sizeof(double) * (i + 1)));
+		d[i] = nums[i] - m;		// Step two: Find out how each data point deviates from the mean.
+		d[i] = d[i] * d[i];		// Step three: Square all of the found deviations. 
+		s += d[i]; 			// Step four: Sum all the squares.
+		++n;
+	}
+	v = s / n;				// Step five: find the variance.
+	std_d = sqrt(v);			// Step six: Get the square root of the variance.
+	
+	free(d);
+	d = NULL;
+
+	printf("Standard deviation: %f\n", std_d);
+	return std_d; 
 }
 
+/**
+ * Just check the args.
+ * Find out the operation type and the actual data.
+ */
 static double *filterArgv(int argc, char **argv)
 {
-	const char *mean = "-a", *median = "-m", *range = "-r", *mode = "-o", *all = "-all";
+	const char *mean = "-a", *median = "-m", *range = "-r", *mode = "-o", *all = "-all", *std_d = "-std";
 	char *endptr;
 	double *nums = NULL;
 	for(int i = 0; i < argc; ++i)
@@ -276,6 +331,11 @@ static double *filterArgv(int argc, char **argv)
 		else if(strcmp(*(argv + i), mode) == 0)
 		{
 			_operation = MODE;
+			break;
+		}
+		else if(strcmp(*(argv + i), std_d) == 0)
+		{
+			_operation = STD_D;
 			break;
 		}
 		else if(strcmp(*(argv + i), all) == 0)
@@ -307,6 +367,10 @@ static double *filterArgv(int argc, char **argv)
 	return nums;
 }
 
+/**
+ * Execute the operations.
+ * This is dependant on the input of args.
+ */
 static void switchAndPrint(double *s)
 {
 	switch(_operation)
@@ -322,6 +386,9 @@ static void switchAndPrint(double *s)
 			break;
 		case MODE:
 			(void)mode(s);
+			break;
+		case STD_D:
+			(void)stdDev(s); 
 			break;
 		case ALL:
 			(void)mean(s);
