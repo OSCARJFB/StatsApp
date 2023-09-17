@@ -1,5 +1,5 @@
 /*
-	Writen by: Oscar Bergström
+  	Writen by: Oscar Bergström
 	https://github.com/OSCARJFB
 
 	MIT License
@@ -15,17 +15,19 @@
 enum modes 
 {
 
-  	OPERATION,
-  	MEAN,
- 	MEDIAN,
-  	RANGE,
-  	MODE,
+	OPERATION,
+	MEAN,
+	MEDIAN,
+	RANGE,
+	MODE,
 	STD_D, 
+	SAMPLE,
 	ALL, 
 }; 
 
 int _operation = 0; 
 int _numCount = 0; 
+int _sample = 0; 
 
 typedef struct numCount
 {
@@ -36,14 +38,14 @@ typedef struct numCount
 
 /**
  * Assert any memory allocation using this function.
- * We just exit if the kernel don't accept our request for memory. 
+ * We just exit if our request for memory is not accepted. 
  */
 void *allocateMem(void *memory)
 {
 	if(memory == NULL) 
 	{
 		perror("Critical error memory allocation failed. Exit with return code 1");
-	        exit(1);	
+		exit(1);	
 	}
 
 	return memory;
@@ -60,7 +62,7 @@ static int getResultsFromHash(numCount *headNode, double **results)
 	for(numCount *node = headNode; node->next != NULL; node = node->next)
 	{
 		if(node->count > maxCount)
-	{
+		{
 			maxCount = node->count;
 		}
 	}
@@ -92,7 +94,7 @@ static void setHash(double num, numCount **headNode)
 		newNode->next = NULL; 	
 		newNode->count += 1; 
 		*headNode = newNode; 
-	       	return; 	
+		return; 	
 	}
 
 	numCount *node = *headNode; 
@@ -149,7 +151,7 @@ static void bSortList(double *nums)
 			{
 				double temp = nums[j]; 
 				nums[j] = nums[i];
-			      	nums[i] = temp;	
+				nums[i] = temp;	
 			}
 		}
 	}
@@ -181,7 +183,7 @@ static void mean(double *s)
 static void median(double *nums)
 {
 	bSortList(nums); 
-	
+
 	int isEven = (_numCount - 1) % 2; 
 	if(isEven == 0)
 	{
@@ -198,7 +200,7 @@ static void median(double *nums)
 	{
 		for(int i = 0; i < _numCount; ++i)
 		{
-			if(i + 1 >  (float)(_numCount / 2))
+			if(i + 1 > (float)(_numCount / 2))
 			{
 				printf("Median: %f\n", nums[i]);
 				return;
@@ -221,7 +223,7 @@ static void range(double *nums)
 	{
 		max = nums[i]; 
 	}
-	
+
 	printf("Range: %f\n", max - min);
 }
 
@@ -272,10 +274,6 @@ static void mode(double *nums)
  *  (m) is the mean and (d) is the deviation of each data point.
  *  (s) the sum of squares of all deviations (v) the variance.
  *  (n) represents the samples and (std_d) the result. 
- *
- *
- *  TODO: right now we calculate only population we shoud also enable sample using v = (s / n - 1) 
- *  To enable this we should have an arugment telling the function which type we want. 
  */
 static void stdDev(double *nums)
 {
@@ -296,13 +294,32 @@ static void stdDev(double *nums)
 		s += d[i]; 			// Step four: Sum all the squares.
 		++n;
 	}
+
+	n += _sample == SAMPLE ? -1 : 0; 	// If sample subtract one data point from divion. 
 	v = s / n;				// Step five: find the variance.
 	std_d = sqrt(v);			// Step six: Get the square root of the variance.
-	
+
 	free(d);
 	d = NULL;
 
-	printf("Standard deviation: %f\n", std_d);
+	_sample == SAMPLE ? printf("Standard deviation sample: %f\n", std_d) : printf("Standard deviation population: %f\n", std_d); 
+}
+
+/**
+ * Determine if we should calculate sample or population standard deviation. 
+ */
+void sampleOrPopulation(int argc, char **argv, int i)
+{
+	if(i == argc)
+	{
+		return; 
+	}
+
+	const char *s = "-s"; 
+	if(strcmp(*(argv + i), s) == 0)
+	{
+		_sample = SAMPLE; 
+	}
 }
 
 /**
@@ -312,7 +329,7 @@ static void stdDev(double *nums)
 static double *filterArgv(int argc, char **argv)
 {
 	const char *mean = "-a", *median = "-m", *range = "-r", *mode = "-o", *all = "-all", *std_d = "-std";
-	char *endptr;
+	char *endptr = NULL;
 	double *nums = NULL;
 	for(int i = 0; i < argc; ++i)
 	{
@@ -339,11 +356,13 @@ static double *filterArgv(int argc, char **argv)
 		else if(strcmp(*(argv + i), std_d) == 0)
 		{
 			_operation = STD_D;
+			sampleOrPopulation(argc, argv, ++i); 
 			break;
 		}
 		else if(strcmp(*(argv + i), all) == 0)
 		{
 			_operation = ALL;
+			sampleOrPopulation(argc, argv, ++i); 
 			break;
 		}
 
@@ -357,7 +376,7 @@ static double *filterArgv(int argc, char **argv)
 			}
 			nums = allocateMem(realloc(nums, sizeof(double) * (i + 1)));
 			nums[i] = result;
-		       	++_numCount; 	
+			++_numCount; 	
 		}
 	}
 
@@ -405,10 +424,10 @@ static void switchAndPrint(double *s)
 
 int main(int argc, char **argv)
 {
-	
+
 	double *nums = filterArgv(argc, argv); 
 	switchAndPrint(nums);
-        free(nums);
+	free(nums);
 	nums = NULL; 	
-    	return 0;	
+	return 0;	
 }
