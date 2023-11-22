@@ -13,7 +13,7 @@ main:
 	$(cc) main.c $(link) $(cflags) -o main.o
 
 release:
-	$(cc) main.c $(link) $(crflags) -g -o statsApp
+	$(cc) main.c $(link) $(crflags) -o statsApp
 
 clean:
 	rm main.o
